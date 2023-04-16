@@ -1,0 +1,60 @@
+services:
+  postgres:
+    container_name: postgres
+    image: postgres
+    restart: always
+    ports:
+      - 2345:5432
+    env_file:
+      - ./server/.env
+    volumes:
+      - db_volume:/var/lib/postgresql/data
+  
+  redis:
+    container_name: redis
+    image: redis
+    restart: always
+    ports: 
+      - 3697:6379
+    env_file:
+      - ./server/.env
+  
+  server:
+    container_name: server
+    build: ./server
+    restart: always
+    ports:
+      - 5000:5000
+    depends_on:
+      - postgres
+      - redis
+    env_file:
+      - ./server/.env
+  
+  client:
+    container_name: client
+    build: ./client
+    env_file:
+      - ./client/.env
+    depends_on:
+      - server
+    volumes:
+      - client_volume:/var/www/html
+
+  nginx:
+    container_name: nginx
+    build: ./server/nginx
+    restart: always
+    ports:
+      - 8080:80
+    depends_on:
+      - postgres
+      - redis
+      - server
+      - client
+    volumes:
+      - client_volume:/var/www/html
+
+volumes:
+  db_volume:
+  client_volume:
